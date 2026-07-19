@@ -23,6 +23,9 @@ target_link_libraries(verify_phase1 upi_crypto OpenSSL::Crypto)
 add_executable(cross_lang_test crypto/cross_lang_test.cpp)
 target_link_libraries(cross_lang_test upi_crypto OpenSSL::Crypto)
 
+add_executable(test_hash crypto/test_hash.cpp)
+target_link_libraries(test_hash upi_crypto OpenSSL::Crypto)
+
 # Phase 2: Models & Persistence
 add_library(upi_model
     model/Database.cpp
@@ -35,3 +38,16 @@ target_link_libraries(upi_model PUBLIC sqlite3)
 
 add_executable(verify_phase2 model/verify_phase2.cpp)
 target_link_libraries(verify_phase2 upi_model)
+
+# Phase 3: Services
+add_library(upi_service
+    service/IdempotencyService.cpp
+    service/SettlementService.cpp
+    service/BridgeIngestionService.cpp
+    service/MeshSimulatorService.cpp
+)
+target_include_directories(upi_service PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(upi_service PUBLIC upi_model upi_crypto OpenSSL::Crypto)
+
+add_executable(verify_phase3 service/verify_phase3.cpp)
+target_link_libraries(verify_phase3 upi_service)

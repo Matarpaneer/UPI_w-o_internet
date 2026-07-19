@@ -238,5 +238,32 @@ std::vector<unsigned char> HybridCryptoService::base64Decode(const std::string& 
     return out;
 }
 
+std::string HybridCryptoService::hashCiphertext(const std::string& base64Ciphertext) {
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (!ctx) throw std::runtime_error("Failed to create MD ctx");
+
+    if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1 ||
+        EVP_DigestUpdate(ctx, base64Ciphertext.c_str(), base64Ciphertext.length()) != 1) {
+        EVP_MD_CTX_free(ctx);
+        throw std::runtime_error("Failed to hash ciphertext");
+    }
+
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int length = 0;
+    if (EVP_DigestFinal_ex(ctx, hash, &length) != 1) {
+        EVP_MD_CTX_free(ctx);
+        throw std::runtime_error("Failed to finalize hash");
+    }
+    EVP_MD_CTX_free(ctx);
+
+    std::string hexStr;
+    char buf[3];
+    for (unsigned int i = 0; i < length; i++) {
+        snprintf(buf, sizeof(buf), "%02x", hash[i]);
+        hexStr.append(buf);
+    }
+    return hexStr;
+}
+
 } // namespace crypto
 } // namespace upimesh

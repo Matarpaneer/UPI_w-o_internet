@@ -36,6 +36,9 @@ public:
     // Decrypts the ciphertext using the server private key
     nlohmann::json decrypt(const std::string& base64Ciphertext);
 
+    // Hashes a base64 ciphertext using SHA-256 for use as an idempotency key
+    std::string hashCiphertext(const std::string& base64Ciphertext);
+
 private:
     std::shared_ptr<ServerKeyHolder> serverKey_;
 
