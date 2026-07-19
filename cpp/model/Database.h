@@ -24,11 +24,17 @@ public:
         return db_;
     }
 
+    // Expose a mutex so repositories can lock before using the connection
+    std::mutex& getMutex() {
+        return connectionMutex_;
+    }
+
 private:
     Database();
     ~Database();
 
     sqlite3* db_ = nullptr;
+    std::mutex connectionMutex_;
     
     void initSchema();
     void seedAccounts();

@@ -23,9 +23,6 @@ target_link_libraries(verify_phase1 upi_crypto OpenSSL::Crypto)
 add_executable(cross_lang_test crypto/cross_lang_test.cpp)
 target_link_libraries(cross_lang_test upi_crypto OpenSSL::Crypto)
 
-add_executable(test_hash crypto/test_hash.cpp)
-target_link_libraries(test_hash upi_crypto OpenSSL::Crypto)
-
 # Phase 2: Models & Persistence
 add_library(upi_model
     model/Database.cpp

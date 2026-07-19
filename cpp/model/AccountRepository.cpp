@@ -6,6 +6,7 @@ namespace upimesh {
 namespace model {
 
 std::optional<Account> AccountRepository::findById(const std::string& vpa) {
+    std::lock_guard<std::mutex> lock(Database::getInstance().getMutex());
     sqlite3* db = Database::getInstance().getConnection();
     const char* sql = "SELECT holderName, balance, version FROM accounts WHERE vpa = ?";
     sqlite3_stmt* stmt = nullptr;
@@ -31,6 +32,7 @@ std::optional<Account> AccountRepository::findById(const std::string& vpa) {
 }
 
 void AccountRepository::save(const Account& account) {
+    std::lock_guard<std::mutex> lock(Database::getInstance().getMutex());
     sqlite3* db = Database::getInstance().getConnection();
     
     // Optimsitic locking: only update if the version matches what we read

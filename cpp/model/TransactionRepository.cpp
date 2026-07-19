@@ -8,6 +8,7 @@ namespace upimesh {
 namespace model {
 
 int64_t TransactionRepository::save(Transaction& tx) {
+    std::lock_guard<std::mutex> lock(Database::getInstance().getMutex());
     sqlite3* db = Database::getInstance().getConnection();
     const char* sql = "INSERT INTO transactions (packetHash, senderVpa, receiverVpa, amount, signedAt, settledAt, bridgeNodeId, hopCount, status) "
                       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -41,6 +42,7 @@ int64_t TransactionRepository::save(Transaction& tx) {
 }
 
 bool TransactionRepository::existsByPacketHash(const std::string& packetHash) {
+    std::lock_guard<std::mutex> lock(Database::getInstance().getMutex());
     sqlite3* db = Database::getInstance().getConnection();
     const char* sql = "SELECT 1 FROM transactions WHERE packetHash = ?";
     sqlite3_stmt* stmt = nullptr;
@@ -57,6 +59,7 @@ bool TransactionRepository::existsByPacketHash(const std::string& packetHash) {
 }
 
 std::vector<Transaction> TransactionRepository::findTop20ByOrderByIdDesc() {
+    std::lock_guard<std::mutex> lock(Database::getInstance().getMutex());
     sqlite3* db = Database::getInstance().getConnection();
     const char* sql = "SELECT id, packetHash, senderVpa, receiverVpa, amount, signedAt, settledAt, bridgeNodeId, hopCount, status "
                       "FROM transactions ORDER BY id DESC LIMIT 20";
