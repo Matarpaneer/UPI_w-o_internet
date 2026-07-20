@@ -48,3 +48,10 @@ target_link_libraries(upi_service PUBLIC upi_model upi_crypto OpenSSL::Crypto)
 
 add_executable(verify_phase3 service/verify_phase3.cpp)
 target_link_libraries(verify_phase3 upi_service)
+
+# Phase 4: App Entry (Drogon)
+find_package(Drogon CONFIG REQUIRED)
+
+add_executable(drogonserver main.cpp controller/ApiController.cpp)
+target_include_directories(drogonserver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(drogonserver PUBLIC upi_service upi_crypto upi_model Drogon::Drogon)

@@ -24,10 +24,7 @@ IngestResult BridgeIngestionService::ingest(const model::MeshPacket& packet, con
         // ---- 2. Decrypt ----
         model::PaymentInstruction instruction;
         try {
-            // Note: In a fully integrated C++ version, crypto decrypt needs to return the struct.
-            // For now, assuming decryptString to JSON parsing.
-            std::string jsonStr = crypto_->decrypt(packet.ciphertext);
-            nlohmann::json j = nlohmann::json::parse(jsonStr);
+            nlohmann::json j = crypto_->decrypt(packet.ciphertext);
             instruction = j.get<model::PaymentInstruction>();
         } catch (const std::exception& e) {
             std::cout << "Decryption failed for packet " << packetHash.substr(0, 12) 
