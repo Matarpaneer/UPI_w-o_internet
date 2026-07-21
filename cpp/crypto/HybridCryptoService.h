@@ -1,10 +1,10 @@
 #pragma once
 
 #include "crypto/ServerKeyHolder.h"
-#include <string>
-#include <vector>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <string>
+#include <vector>
 
 namespace upimesh {
 namespace crypto {
@@ -20,31 +20,33 @@ namespace crypto {
  * (fast + authenticated), then encrypt JUST the AES key with RSA-OAEP.
  *
  * Wire format (after base64 encoding):
- *   [ 256 bytes RSA-encrypted AES key ][ 12 bytes GCM IV ][ ciphertext + 16-byte tag ]
+ *   [ 256 bytes RSA-encrypted AES key ][ 12 bytes GCM IV ][ ciphertext +
+ * 16-byte tag ]
  *
- * AES-GCM is authenticated encryption: any single-bit tampering with the ciphertext
- * causes decryption to fail with an exception. This is what makes it safe for
- * untrusted intermediates to hold.
+ * AES-GCM is authenticated encryption: any single-bit tampering with the
+ * ciphertext causes decryption to fail with an exception. This is what makes it
+ * safe for untrusted intermediates to hold.
  */
 class HybridCryptoService {
 public:
-    HybridCryptoService(std::shared_ptr<ServerKeyHolder> serverKey);
+  HybridCryptoService(std::shared_ptr<ServerKeyHolder> serverKey);
 
-    // Encrypts a JSON object simulating the sender device behavior
-    std::string encrypt(const nlohmann::json& instruction, EVP_PKEY* serverPublicKey);
+  // Encrypts a JSON object simulating the sender device behavior
+  std::string encrypt(const nlohmann::json &instruction,
+                      EVP_PKEY *serverPublicKey);
 
-    // Decrypts the ciphertext using the server private key
-    nlohmann::json decrypt(const std::string& base64Ciphertext);
+  // Decrypts the ciphertext using the server private key
+  nlohmann::json decrypt(const std::string &base64Ciphertext);
 
-    // Hashes a base64 ciphertext using SHA-256 for use as an idempotency key
-    std::string hashCiphertext(const std::string& base64Ciphertext);
+  // Hashes a base64 ciphertext using SHA-256 for use as an idempotency key
+  std::string hashCiphertext(const std::string &base64Ciphertext);
 
 private:
-    std::shared_ptr<ServerKeyHolder> serverKey_;
+  std::shared_ptr<ServerKeyHolder> serverKey_;
 
-    // Helpers
-    std::string base64Encode(const std::vector<unsigned char>& data);
-    std::vector<unsigned char> base64Decode(const std::string& b64);
+  // Helpers
+  std::string base64Encode(const std::vector<unsigned char> &data);
+  std::vector<unsigned char> base64Decode(const std::string &b64);
 };
 
 } // namespace crypto

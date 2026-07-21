@@ -33,6 +33,9 @@ target_include_directories(upi_model PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_
 # Link against system sqlite3
 target_link_libraries(upi_model PUBLIC sqlite3)
 
+add_executable(craft_packet craft_packet.cpp)
+target_link_libraries(craft_packet PRIVATE upi_crypto upi_model OpenSSL::Crypto)
+
 add_executable(verify_phase2 model/verify_phase2.cpp)
 target_link_libraries(verify_phase2 upi_model)
 
@@ -48,6 +51,21 @@ target_link_libraries(upi_service PUBLIC upi_model upi_crypto OpenSSL::Crypto)
 
 add_executable(verify_phase3 service/verify_phase3.cpp)
 target_link_libraries(verify_phase3 upi_service)
+
+# ---------------------------------------------------------
+# Phase 5: CTest Wiring
+# ---------------------------------------------------------
+enable_testing()
+
+add_test(NAME verify_phase1 COMMAND verify_phase1)
+add_test(NAME verify_phase2 COMMAND verify_phase2)
+add_test(NAME verify_phase3 COMMAND verify_phase3)
+
+# Integration tests that require the Drogon HTTP server
+add_test(NAME smoke_test COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_with_server.sh ${CMAKE_CURRENT_BINARY_DIR} bash ${CMAKE_CURRENT_SOURCE_DIR}/smoke_test.sh)
+add_test(NAME concurrency_test COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_with_server.sh ${CMAKE_CURRENT_BINARY_DIR} bash ${CMAKE_CURRENT_SOURCE_DIR}/concurrency_test.sh)
+add_test(NAME read_write_test COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_with_server.sh ${CMAKE_CURRENT_BINARY_DIR} python3 ${CMAKE_CURRENT_SOURCE_DIR}/read_write_test.py)
+add_test(NAME pre_ctest_checks COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_with_server.sh ${CMAKE_CURRENT_BINARY_DIR} python3 ${CMAKE_CURRENT_SOURCE_DIR}/pre_ctest_checks.py)
 
 # Phase 4: App Entry (Drogon)
 find_package(Drogon CONFIG REQUIRED)
