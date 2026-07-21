@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPIMesh Dashboard</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; color: #333; }
+        h1, h2 { color: #222; margin-top: 0; }
+        .container { display: flex; flex-direction: column; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .row { display: flex; gap: 20px; flex-wrap: wrap; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f8f8f8; font-weight: 600; }
+        button { background-color: #0066cc; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background-color: #005bb5; }
+        button:active { background-color: #004c99; }
+        .btn-danger { background-color: #cc0000; }
+        .btn-danger:hover { background-color: #b30000; }
+        .btn-success { background-color: #28a745; }
+        .btn-success:hover { background-color: #218838; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        /* Status Colors */
+        .status-SETTLED { color: #155724; background-color: #d4edda; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+        .status-REJECTED { color: #721c24; background-color: #f8d7da; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+        .status-DUPLICATE_DROPPED { color: #856404; background-color: #fff3cd; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+        .status-INVALID { color: #383d41; background-color: #e2e3e5; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+        
+        .device-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 4px; background-color: #fafafa; }
+        .device-card.has-internet { border-left: 4px solid #28a745; }
+        .device-card.offline { border-left: 4px solid #cc0000; }
+        
+        #status-bar { padding: 10px; margin-bottom: 20px; border-radius: 4px; display: none; }
+        #status-bar.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; display: block; }
+        #status-bar.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; display: block; }
+        
+        pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>UPIMesh Dashboard</h1>
+        <button class="btn-danger" onclick="resetDemo()">Reset Demo</button>
+    </div>
+
+    <div id="status-bar"></div>
+
+    <div class="row">
+        <!-- Accounts Panel -->
+        <div class="card">
+            <h2>Accounts</h2>
+            <table id="accounts-table">
+                <thead><tr><th>VPA</th><th>Name</th><th>Balance (₹)</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Send Payment Form -->
+        <div class="card">
+            <h2>Send Payment</h2>
+            <div class="form-group">
+                <label>Sender VPA</label>
+                <select id="send-sender">
+                    <option value="alice@demo">alice@demo</option>
+                    <option value="bob@demo">bob@demo</option>
+                    <option value="carol@demo">carol@demo</option>
+                    <option value="dave@demo">dave@demo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Receiver VPA</label>
+                <select id="send-receiver">
+                    <option value="bob@demo">bob@demo</option>
+                    <option value="alice@demo">alice@demo</option>
+                    <option value="carol@demo">carol@demo</option>
+                    <option value="dave@demo">dave@demo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Amount (₹)</label>
+                <input type="number" id="send-amount" value="50.00" step="0.01" />
+            </div>
+            <div class="form-group">
+                <label>PIN</label>
+                <input type="password" id="send-pin" value="123456" />
+            </div>
+            <div class="form-group">
+                <label>Device (Start Node)</label>
+                <select id="send-device">
+                    <option value="phone-alice">phone-alice (Offline)</option>
+                    <option value="phone-bob">phone-bob (Offline)</option>
+                    <option value="phone-carol">phone-carol (Offline)</option>
+                    <option value="shop-bridge">shop-bridge (Online)</option>
+                </select>
+            </div>
+            <button onclick="sendPayment()">Sign & Inject to Mesh</button>
+            <div id="send-result" style="margin-top: 15px; display: none;">
+                <strong>Packet ID:</strong> <span id="send-pkt-id"></span><br/>
+                <strong>Ciphertext Preview:</strong> <pre id="send-ctx"></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Mesh Visualization -->
+        <div class="card" style="flex: 2;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2>Mesh Network State</h2>
+                <div>
+                    <button class="btn-success" onclick="gossipOnce()">Gossip Once (Simulate BLE)</button>
+                    <button class="btn-danger" onclick="flushToBridge()">Flush to Bridge (Upload)</button>
+                </div>
+            </div>
+            <p><strong>Idempotency Cache Size:</strong> <span id="mesh-cache-size">0</span></p>
+            <div id="mesh-devices" class="row"></div>
+        </div>
+    </div>
+
+    <!-- Transactions Panel -->
+    <div class="card">
+        <h2>Transactions History</h2>
+        <table id="tx-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Timestamp</th>
+                    <th>Sender</th>
+                    <th>Receiver</th>
+                    <th>Amount (₹)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_BASE = ''; // Same host
+
+    function showStatus(msg, isError = false) {
+        const bar = document.getElementById('status-bar');
+        bar.textContent = msg;
+        bar.className = isError ? 'error' : 'success';
+        setTimeout(() => { bar.style.display = 'none'; }, 5000);
+    }
+
+    async function fetchAccounts() {
+        try {
+            const res = await fetch(`${API_BASE}/api/accounts`);
+            const accounts = await res.json();
+            const tbody = document.querySelector('#accounts-table tbody');
+            tbody.innerHTML = '';
+            accounts.forEach(acc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${acc.vpa}</td><td>${acc.name}</td><td>${(acc.balance).toFixed(2)}</td>`;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            showStatus('Failed to fetch accounts', true);
+        }
+    }
+
+    async function fetchMeshState() {
+        try {
+            const res = await fetch(`${API_BASE}/api/mesh/state`);
+            const data = await res.json();
+            document.getElementById('mesh-cache-size').textContent = data.idempotencyCacheSize;
+            
+            const container = document.getElementById('mesh-devices');
+            container.innerHTML = '';
+            
+            data.devices.forEach(d => {
+                const div = document.createElement('div');
+                div.className = `device-card ${d.hasInternet ? 'has-internet' : 'offline'}`;
+                div.style.flex = '1';
+                div.style.minWidth = '200px';
+                
+                div.innerHTML = `
+                    <strong>${d.deviceId}</strong> ${d.hasInternet ? '📶 (Online)' : '📵 (Offline)'}<br/>
+                    Packets: ${d.packetCount}<br/>
+                    <div style="font-size: 11px; margin-top: 5px; color: #666;">
+                        ${d.packetIds.join(', ') || 'No packets'}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        } catch (e) {
+            showStatus('Failed to fetch mesh state', true);
+        }
+    }
+
+    async function fetchTransactions() {
+        try {
+            const res = await fetch(`${API_BASE}/api/transactions`);
+            const txs = await res.json();
+            const tbody = document.querySelector('#tx-table tbody');
+            tbody.innerHTML = '';
+            txs.forEach(tx => {
+                const tr = document.createElement('tr');
+                const date = new Date(tx.signedAt).toLocaleTimeString();
+                tr.innerHTML = `
+                    <td>${tx.id}</td>
+                    <td>${date}</td>
+                    <td>${tx.senderVpa}</td>
+                    <td>${tx.receiverVpa}</td>
+                    <td>${(tx.amount).toFixed(2)}</td>
+                    <td><span class="status-${tx.status}">${tx.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            showStatus('Failed to fetch transactions', true);
+        }
+    }
+
+    async function sendPayment() {
+        const payload = {
+            senderVpa: document.getElementById('send-sender').value,
+            receiverVpa: document.getElementById('send-receiver').value,
+            amount: parseFloat(document.getElementById('send-amount').value),
+            pin: document.getElementById('send-pin').value,
+            startDevice: document.getElementById('send-device').value,
+            ttl: 5
+        };
+        
+        try {
+            const res = await fetch(`${API_BASE}/api/demo/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!res.ok) {
+                const err = await res.json();
+                showStatus(`Send failed: ${err.message}`, true);
+                return;
+            }
+            
+            const data = await res.json();
+            document.getElementById('send-result').style.display = 'block';
+            document.getElementById('send-pkt-id').textContent = data.packetId;
+            document.getElementById('send-ctx').textContent = data.ciphertextPreview;
+            
+            showStatus(`Packet injected at ${data.injectedAt}`);
+            await fetchMeshState();
+        } catch (e) {
+            showStatus('Failed to send payment', true);
+        }
+    }
+
+    async function gossipOnce() {
+        try {
+            const res = await fetch(`${API_BASE}/api/mesh/gossip`, { method: 'POST' });
+            const data = await res.json();
+            showStatus(`Gossip complete: ${data.transfers} packets transferred between devices.`);
+            await fetchMeshState();
+        } catch (e) {
+            showStatus('Gossip failed', true);
+        }
+    }
+
+    async function flushToBridge() {
+        try {
+            const res = await fetch(`${API_BASE}/api/mesh/flush`, { method: 'POST' });
+            const data = await res.json();
+            
+            let summary = `Flush complete: ${data.uploadedCount} uploaded.`;
+            // Log individual outcomes to status or console
+            console.log("Flush details:", data.details);
+            
+            showStatus(summary);
+            await fetchAccounts();
+            await fetchMeshState();
+            await fetchTransactions();
+        } catch (e) {
+            showStatus('Flush failed', true);
+        }
+    }
+
+    async function resetDemo() {
+        try {
+            await fetch(`${API_BASE}/api/mesh/reset`, { method: 'POST' });
+            showStatus('Demo reset successfully');
+            await refreshAll();
+        } catch (e) {
+            showStatus('Reset failed', true);
+        }
+    }
+
+    async function refreshAll() {
+        await fetchAccounts();
+        await fetchMeshState();
+        await fetchTransactions();
+    }
+
+    // Initial load
+    refreshAll();
+</script>
+</body>
+</html>
