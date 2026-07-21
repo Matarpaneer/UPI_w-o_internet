@@ -1,10 +1,11 @@
 #include "controller/AppContext.h"
 #include "model/Database.h"
 #include <drogon/drogon.h>
+#include <filesystem>
 
 using namespace upimesh;
 
-int main() {
+int main(int argc, char *argv[]) {
   // 1. Force Database initialization and seed demo data
   model::Database::getInstance();
 
@@ -44,6 +45,14 @@ int main() {
         resp->addHeader("Access-Control-Allow-Headers",
                         "Content-Type, X-Bridge-Node-Id, X-Hop-Count");
       });
+
+  // 7. Serve Static Files using absolute path relative to executable
+  std::filesystem::path exePath = std::filesystem::weakly_canonical(std::filesystem::absolute(argv[0]));
+  std::string staticDir = (exePath.parent_path() / "../static").lexically_normal().string();
+  drogon::app().setDocumentRoot(staticDir);
+  drogon::app().setHomePage("index.html");
+  
+  std::cout << "Resolved Document Root: " << staticDir << "\n";
 
   // 8. Start the Drogon Web Server
   std::cout << "Starting UPIMesh C++ Backend on http://0.0.0.0:8080 ...\n";
