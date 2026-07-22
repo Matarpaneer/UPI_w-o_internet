@@ -27,6 +27,7 @@ public:
   std::recursive_mutex &getMutex() { return connectionMutex_; }
 
   void execute(const char *sql);
+  void reset();
 
 private:
   Database();

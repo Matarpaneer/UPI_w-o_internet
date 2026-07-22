@@ -86,5 +86,12 @@ void Database::execute(const char *sql) {
   }
 }
 
+void Database::reset() {
+  std::lock_guard<std::recursive_mutex> lock(connectionMutex_);
+  execute("DELETE FROM transactions;");
+  execute("DELETE FROM accounts;");
+  seedAccounts();
+}
+
 } // namespace model
 } // namespace upimesh

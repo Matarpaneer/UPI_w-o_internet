@@ -208,6 +208,7 @@ void ApiController::meshReset(
   auto ctx = getCtx();
   ctx.mesh->resetMesh();
   ctx.idempotency->clear();
+  model::Database::getInstance().reset();
 
   Json::Value ret;
   ret["status"] = "mesh and idempotency cache cleared";
